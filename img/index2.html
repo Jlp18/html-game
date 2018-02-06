@@ -1,0 +1,80 @@
+<!DOCTYPE html>           <!--表单-->
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>表单</title>
+		<style type="text/css">
+			h1 > strong{color:red;}
+		</style>
+		<script type="text/javascript">
+			function disp_prompt()
+			{
+				var name=prompt("请输入你的姓名","");
+				var sex=prompt("请输入你的性别","男");
+				if(name!=null&&name!="")
+				{
+					if(sex=="男")
+					{
+						var str=name+"先生您好! \n\n今天天气不错，希望您玩的开心";
+						alert(str);
+					}
+					else
+					{
+						var str=name+"女士您好！\n\n今天天气不错，希望您玩的开心";
+						alert(str);
+					}
+				}
+			}
+		</script>
+	</head>
+	<body>
+		<h1>This is<strong>very</strong><strong>very</strong>important.</h1>
+		<form action="http://www.example.org" method="get">
+			<div>
+				<label>
+					用户真是姓名:<input type="text" name="username" size="20"/>
+				</label>   <!--隐式关联-->
+				<br/>
+				<label for="mylanguage">精通编程语言:</label><!--显式-->
+				<select name="mylanguage">
+					<option>Java</option>
+					<opyion>C#</opyion>
+					<option>Python</option>
+					<option>PHP</option>
+					<option>C++</option>
+				</select>
+				<label>
+					请填写您的个人简历（150-200字）:
+				<br />
+					<textarea name="resume" rows="15" cols="60"></textarea>
+				</label>
+				<br />
+				选择您有意向的工作单位:
+				<label>
+					<input type="checkbox" name="IT" value="software">软件开发
+				</label>
+				<label>
+					<input type="checkbox" name="IT" value="Web">互联网开发
+				</label>
+				<label>
+					<input type="checkbox" name="IT" value="OS">操作系统开发
+				</label>
+				<label>
+					<input type="checkbox" name="IT" value="other">其他
+				</label>
+				<br /> <br />
+				<input type="submit" name="doit" value="提交个人简历" />
+			</div>
+		</form>
+		<p>
+			<a href="http://www.runoob.com" target="iframe_a">RUNOOB.COM</a>
+			&nbsp;&nbsp;
+			<a href="http://www.baidu.com"  target="iframe_b">BAIDU.COM</a>
+		</p>
+		<br>
+		<!--<iframe width="100%" height="500px" frameborder="0" name="iframe_b"></iframe>--> <!--镶嵌网页-->
+		<input type="text" value="请输入整型数值:" onfocus="this.select();"/>
+		<input type="button" value="Click me" onclick="alert('I\'m triggered by onclick.');" />
+		<input type="button" onclick="disp_prompt()" value="单击这里"  />
+	</body>
+</html>

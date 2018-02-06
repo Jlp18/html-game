@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>html input 输入框提示（hint）内容的实现</title>
+</head>
+
+<body>
+<form action="/testform.asp" method="get">
+	Postcode:<input type="text" name="zip_code" pattern="[0-9]{6}" placeholder="请输入0-9的6位数编码"/>
+	<input onkeyup="value=value.replace(/[ -~]/g,'')" onkeydown="if(event.keyCode==13)event.keyCode=9"> 
+    <input type="submit" value="Submit"/>
+</form>
+</body>
+</html>

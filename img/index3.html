@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html;charset=utf-8">
+		<title>设置颜色属性</title>
+		<script language="JavaScript">
+			var modifyday=new Date(document.lastModified);
+			var year=modifyday.getYear();
+			var month=modifyday.getMonth()+1;
+			var date=modifyday.getDate();
+			document.write("<h2>本文档最后一次修改时间: "+year+"年"+month+"月"+date+"日</h2>");
+			document.bgColor="white";
+			document.fgColor="black";
+			document.linkColor="red";
+			document.alinkColor="white";
+			document.vlinkColor="yellow";
+		</script>	
+		<link rel="stylesheet" href="css/bootstrap.min.css" />
+		<!--<link href="http://libs.baidu.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">-->
+	</head>
+	<body>
+		<h1>设置颜色属性</h1>
+		<p>这个页面显示了如何设置颜色属性。</p>
+		<p>这里<a href="#">是一个简单的连接</a></p>
+		
+		
+		<input type="button" class="btn btn-primary" value="sdsda">
+		<div class="container">
+			asfdfdfd
+		</div>
+		<form name=form1 target="_blank" method=post onsubmit="return dosubmit(this)">
+			会员号码（6位数字）：<input type=text name=men_id>
+			<input type=submit name="submit1" value="提交" class="btn btn-danger">
+		</form>
+		<script language="JavaScript">
+			function dosubmit(frm){
+				if(frm.men_id.value.length!=6){
+					alert("会员号必须是6位");
+					return false;
+				}
+				else{
+					var men_value=frm.men_id.value;
+					for(var i=0;i<men_value.length;i++){
+						if(men_value.charAt(i)<'0'||men_value.charAt(i)>'9'){
+							alert('会员号必须是数字');return false;
+						}
+					}
+				}
+				frm.submit();
+			}
+		</script>
+		<script>
+			with(document){
+				write("你的浏览器的信息:<ol>");
+				write("<li>代码:"+navigator.appCodeName);
+				write("<li>名称:"+navigator.appName);
+				write("<li>版本:"+navigator.appVersion);
+				write("<li>语言:"+navigator.navigator.language);
+				write("<li>编译平台:"+navigator.platform);
+				write("<li>用户表头:"+navigator.userAgent);
+			}
+		</script>
+		<input type="button" id="agree" value="还剩下(10)秒钟">
+		<script type="text/javascript">
+			function update(num){
+				//判断初始时间是否等于要循环的时间
+				if(num==settime){
+					document.all.agree.value="下一步";
+					//设置按钮的disabled为false
+					document.all.agree.disabled=false;
+				}
+				else{   //不相等时用初始时间减去循环时间
+					showthis=settime-num;
+					document.all.agree.value="还剩下("+showthis+")秒钟";
+				}
+			}
+			//初始化关闭需要的时间
+			var settime=10;
+			//定义自变量
+			var i;
+			var showthis;
+			//设置按钮的disabled为true
+			document.all.agree.diaabled=true;
+			//用for循环更改时间
+			for(i=1;i<=settime;i++){
+				setTimeout("update("+i+")",i*1000);
+			}
+		</script>
+		<script src="https://code.jquery.com/jquery.js"></script>
+		<script src="js/bootstrap.min.js"></script>
+		<!--<script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+        <script src="http://libs.baidu.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>-->
+	</body>
+</html>               

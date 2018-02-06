@@ -1,0 +1,646 @@
+<!--<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>黑白棋V1.0</title>
+
+    <script src="http://lib.sinaapp.com/js/jquery/1.9.1/jquery-1.9.1.min.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+/* Othello.js
+ * 目标：8×8黑白棋，带AI
+ * 规则：执黑先行，处于两个异色棋子之间的棋子，颜色会转换,认输或棋盘上填满棋子时结束，拥有较多棋子的人获胜
+ * 说明：每一步必须转换至少一个棋子，若不能，该回合将被自动放弃，算分时，棋盘的空位属于胜方     
+ * zhouh@hereis_20150909
+ */
+var totalPoints = 0; //当前总分
+var maxPoints = 0; //最大数目
+var blackPoints = 0; //黑方得分
+var whitePoints = 0; //白方得分
+var player = 'black'; //当前执子者
+var chesses = new Array(); //2维数组，棋盘抽象
+var blackChess = document.createElement('div');
+blackChess.setAttribute('class', 'black'); //黑子
+var whiteChess = document.createElement('div');
+whiteChess.setAttribute('class', 'white'); //白子
+$(document).ready(function () {
+  createBoard();
+  arrExt();
+})
+function createBoard(n) //创建NxN的棋盘
+{
+  if (!n) n = 8;
+  maxPoints = n * n;
+  var board = document.getElementById('checkboard');
+  var her = new Array(n);
+  for (var i = 0; i < n; i++) //绘制棋盘
+  {
+    var row = document.createElement('tr'); //行
+    row.setAttribute('id', 'r' + i);
+    row.setAttribute('height', '40px');
+    var col = new Array(n);
+    for (var j = 0; j < n; j++)
+    {
+      var cell = document.createElement('td'); //列
+      col[i] = ''; //棋子颜色
+      cell.setAttribute('id', 'c' + j);
+      cell.setAttribute('width', '40px');
+      cell.setAttribute('onmousedown', 'done(this)');
+      row.appendChild(cell);
+    }
+    board.appendChild(row);
+    her[i] = col;
+  }
+  chesses = her;
+  var p1 = n / 2 - 1;
+  var p2 = n / 2;
+  putChess(p1, p1, 'white');
+  putChess(p2, p2, 'white');
+  putChess(p1, p2, 'black');
+  putChess(p2, p1, 'black');
+}
+function done(obj) //落子
+{
+  if (player == 'over') {
+    alert('游戏结束了');
+    return;
+  }
+  if(player=='white')
+  {
+    alert('不是您的回合，请稍候');
+    return;
+  }
+  var target = obj;
+  var board = document.getElementById('checkboard');
+  var col = parseInt(obj.getAttribute('id').substring(1));
+  var row = parseInt(obj.parentNode.getAttribute('id').substring(1));
+  //该点是否可以落子
+  if (target.childNodes.length > 0) { //已经有了
+    target.style.backgroundColor = 'red';
+    $(target).one('mouseup', function () {
+      $(target).css('background-color', 'white');
+    })
+    return false;
+  }
+  if (!checkNeb(row, col)) //四周没有邻居
+  {
+    target.style.backgroundColor = 'red';
+    $(target).one('mouseup', function () {
+      $(target).css('background-color', 'white');
+    })
+    return false;
+  }
+  var eftAry = effects(row, col, player); //受影响的棋子数
+  if (eftAry.length == 0) //没有能翻转任何棋子
+  {
+    target.style.backgroundColor = 'red';
+    $(target).one('mouseup', function () {
+      $(target).css('background-color', 'white');
+    })
+    return false;
+  }
+  putChess(row, col, player);
+  shift(eftAry);
+  judge();
+}
+function putChess(x, y, color) //放棋子
+{
+  var chess = color == 'white' ? whiteChess.cloneNode()  : blackChess.cloneNode();
+  var board = document.getElementById('checkboard');
+  board.childNodes[x + 1].childNodes[y].appendChild(chess);
+  chesses[x][y] = color;
+  blackPoints=0;
+  whitePoints=0;
+  for(var i=0;i<chesses.length;i++)
+  {
+    for(var j=0;j<chesses.length;j++)
+    {
+        if(chesses[i][j]=='white')
+        {
+            whitePoints++;
+        }
+        if(chesses[i][j]=='black')
+        {
+            blackPoints++;
+        }
+    }
+  }
+    document.getElementById('bp').innerHTML=blackPoints;
+  document.getElementById('wp').innerHTML=whitePoints;
+}
+function judge() //裁判
+{
+  //是否结束
+  if (totalPoints >= maxPoints)
+  {
+    tip('游戏结束');
+    checkPoints();
+    player = 'over'
+    return;
+  }
+  //下一步谁来下
+
+  if (player == 'black') {
+    player = 'white';
+  } 
+  else if (player == 'white') {
+    player = 'black'
+  }
+  tip('现在轮到：' + player);
+  //可以走吗？
+  var forcast = forseer();
+  if (forcast.length == 0) { //轮空
+    var playerNext = player == 'white' ? 'black' : player == 'black' ? 'white' : '';
+    confirm('当前玩家 ' + player + ' 没有可下的地方,该回合轮空，现在轮到 ' + playerNext + ' 继续');
+    player = playerNext;
+    tip('现在轮到：' + player);
+    forcast = forseer();
+    if (forcast.length == 0)
+    {
+      confirm('双方均没有可以下的地方，游戏结束');
+      checkPoints();
+      return;
+    }
+  }
+  //继续下一步
+
+  if (player == 'white')//白棋
+  {
+    var move = AIModule();
+    function step()
+    {
+      putChess(move.row, move.col, 'white');
+      var eArray = effects(move.row, move.col, player,true);
+      shift(eArray);
+      judge();
+      clearTimeout(st)
+    }
+    var st = setTimeout(step, 1000);
+  }
+  function checkPoints() //算分
+  {
+    if (blackPoints > whitePoints)
+    {
+      var t = setTimeout(function () {
+        tip('YOU WIN!');
+        clearTimeout(t);
+      }, 1000);
+
+    } 
+    else {
+      var t = setTimeout(function () {
+        tip('YOU ARE DEFEATED!');
+        clearTimeout(t);
+      }, 1000)
+
+    }
+  }
+}
+function gg() //认输
+{
+}
+function tip(s) //提示
+{
+  var tips = document.getElementById('tips')
+  tips.innerHTML = s;
+}
+function checkNeb(row, col) //落子时，四（八）个方向上至少有一个邻居
+{
+  var _w = chesses[row] ? chesses[row][col - 1] ? chesses[row][col - 1] : '' : '';
+  var _e = chesses[row] ? chesses[row][col + 1] ? chesses[row][col + 1] : '' : '';
+  var _n = chesses[row + 1] ? chesses[row + 1][col] ? chesses[row + 1][col] : '' : '';
+  var _s = chesses[row - 1] ? chesses[row - 1][col] ? chesses[row - 1][col] : '' : '';
+  //var _nw = chesses[row - 1] ? chesses[row - 1][col - 1] ? chesses[row - 1][col - 1] : '' : '';
+  //var _sw = chesses[row + 1] ? chesses[row + 1][col - 1] ? chesses[row + 1][col - 1] : '' : '';
+  //var _ne = chesses[row - 1] ? chesses[row - 1][col+1] ? chesses[row - 1][col+1] : '' : '';
+  //var _se = chesses[row + 1] ? chesses[row + 1][col+1] ? chesses[row + 1][col+1] : '' : '';
+  //console.log(_w + '|' + _e + '|' + _n + '|' + _s);
+  //if (_w != '' || _e != '' || _n != '' || _s != '' || _nw != '' || _sw != '' || _ne != '' || _se != '') return true;
+  if (_w != '' || _e != '' || _n != '' || _s != '') return true;
+  return false
+}
+function effects(row, col, player, flag) //计算该点落子之后收到影响到棋子，给出其位置
+{
+  var total = new Array();
+  var board = document.getElementById('checkboard');
+  if (chesses[row] == undefined) return;
+  //if(chesses[row][col-1]==undefined) return;
+  if (!flag) {
+    chesses[row][col] = player; //假装放上去    
+  }
+  var num = board.childNodes.length - 1;
+  var horizon = chesses[row]; //水平方向
+  var h_num = checkArray(horizon, player);
+  if (h_num.length > 0)
+  {
+    for (var i = 0; i < h_num.length; i++)
+    {
+      total.push({
+        x: row, //行
+        y: h_num[i] //列
+      })
+    }
+  }
+  var vertical = new Array();
+  for (var i = 0; i < num; i++)
+  {
+    vertical.push(chesses[i][col]); //竖直方向
+  }
+  var v_num = checkArray(vertical, player);
+  if (v_num.length > 0)
+  {
+    for (var i = 0; i < v_num.length; i++)
+    {
+      total.push({
+        x: v_num[i], //行
+        y: col //列
+      })
+    }
+  }
+  var lt = new Array(); //左上到右下
+  var lt_ast = new Array(); //辅助数组
+  var lb = new Array(); //左下到右上
+  var lb_ast = new Array();
+  var delta1 = row - col; //行列差值
+  var delta2 = col + row; //行列和
+  for (var i = 0; i < num; i++) { //对整个数组遍历
+    for (var j = 0; j < num; j++)
+    {
+      if (i - j == delta1)
+      {
+        lt.push(chesses[i][j]); //拿到对角线的元素数组
+        lt_ast.push({
+          x: i,
+          y: j
+        });
+      }
+      if (i + j == delta2)
+      {
+        lb.push(chesses[i][j]);
+        lb_ast.push({
+          x: i,
+          y: j
+        });
+      }
+    }
+  }
+  var _lt = checkArray(lt, player);
+  var _lb = checkArray(lb, player);
+  for (var i = 0; i < _lt.length; i++)
+  {
+    total.push(lt_ast[_lt[i]]);
+  }
+  for (var j = 0; j < _lb.length; j++)
+  {
+    total.push(lb_ast[_lb[j]]);
+  }
+  if (!flag) {
+    chesses[row][col] = ''; //记得拿掉    
+  }
+  return total;
+}
+function shift(ary) //棋子翻转
+{
+  var board = document.getElementById('checkboard');
+  for (var i = 0; i < ary.length; i++)
+  {
+    var chess = board.childNodes[ary[i].x + 1].childNodes[ary[i].y].childNodes[0];
+    if (chess.getAttribute('class') == 'black')
+    {
+      chesses[ary[i].x][ary[i].y] = 'white';
+      chess.setAttribute('class', 'white');
+      blackPoints--;
+      whitePoints++;
+    } 
+    else if (chess.getAttribute('class') == 'white')
+    {
+      chesses[ary[i].x][ary[i].y] = 'black';
+      chess.setAttribute('class', 'black');
+      blackPoints--;
+      whitePoints++;
+    }
+  }
+  document.getElementById('bp').innerHTML=blackPoints;
+  document.getElementById('wp').innerHTML=whitePoints;
+}
+function checkArray(ary, color) //对于数组做检查，哪些位可以被翻转，返回一个数组，指出其在原始数组中的位置
+{
+  var result = new Array();
+  var startIndex = 0;
+  var maxIndex = 0;
+  for (var i = 0; i < ary.length; i++) { //正序找最小
+    if (ary[i] == color) {
+      startIndex = i;
+      break;
+    }
+  }
+  for (var i = ary.length - 1; i >= 0; i--) { //逆序找最大
+    if (ary[i] == color) {
+      maxIndex = i;
+      break;
+    }
+  }
+  if (startIndex == maxIndex) return result; //没有值
+  for (var i = startIndex; i < maxIndex; i++) {
+    if (ary[i] != color && ary[i] != undefined && ary[i] != '') result.push(i);
+  }
+  return result;
+}
+function test(row, col, player) //推算影响（能不能下，下了收益多少，下了之后的局势）->(able:bool,effects:int,status:array)
+{
+  var able,
+  effect,
+  status;
+  able = true; //假设可以下
+  if (chesses[row][col] == 'black' || chesses[row][col] == 'white') {
+    able = false;
+  } 
+  else if (!checkNeb(row, col)) {
+    able = false;
+  } 
+  else
+  {
+    effect = effects(row, col, player)
+    if (effect.length == 0) {
+      able = false;
+    }
+  }
+  if (able)
+  {
+    //effect = effects(row, col, player); //下了之后的收益
+    status = chesses.copy();
+    if (status[row] != undefined) {
+      status[row][col] = player; //下一步的局势
+    }
+    if (effect.length > 0)
+    {
+      for (var i = 0; i < effect.length; i++)
+      {
+        status[effect[i].x][effect[i].y] = player;
+      }
+    }
+  }
+  return {
+    able: able,
+    effect: effect,
+    status: status
+  };
+}
+function AIModule(level) //AI模组,level决定等级->(row:int,col:int)
+{
+  //s1.推测能下在哪些位置
+  //s2.计算收益
+  //s3.局势推演->s1
+  if (!level) level = 0;
+  var strategy = new Array();
+  var moveX,
+  moveY;
+  if (level == 0)
+  {
+    var foo = new Array();
+    for (var i = 0; i < chesses.length; i++)
+    {
+      for (var j = 0; j < chesses.length; j++)
+      {
+        var p = test(i, j, player); //所有解
+        if (p.able)
+        {
+          foo.push({
+            eft: p, //该点收益与未来局势
+            row: i, //点的位置
+            col: j
+          });
+        }
+      }
+    }
+    var profit = 0; //收益
+    for (var i = 0; i < foo.length; i++) //找到最优解
+    {
+      if (foo[i].eft.effect.length >= profit)
+      {
+        moveX = foo[i].row;
+        moveY = foo[i].col;
+      }
+    }
+    return {
+      row: moveX,
+      col: moveY
+    }
+  }
+  function cyc(map) //递归算法，推算n步之后的最优解，level决定递归深度
+  {
+    cyc()
+  }
+}
+function forseer() //预测算法
+{
+  var forcast = new Array();
+  for (var i = 0; i < chesses.length; i++)
+  {
+    for (var j = 0; j < chesses.length; j++)
+    {
+      var row = i;
+      var col = j;
+      var t = test(row, col, player);
+      if (t.able)
+      {
+        forcast.push({
+          row: row,
+          col: col,
+          effect: t.effect
+        });
+      }
+    }
+  }
+  return forcast;
+}
+function arrExt() //多维数组深拷贝
+{
+  if (!Array.copy)
+  {
+    Array.prototype.copy = function () {
+      return di(this);
+      function di(arr)
+      {
+        var q = new Array();
+        for (var i = 0; i < arr.length; i++)
+        {
+          if (typeof arr[i] === 'object')
+          {
+            var p = new Array();
+            p = di(arr[i]);
+            q[i] = p;
+          } 
+          else
+          {
+            q[i] = arr[i];
+          }
+        }
+        return q;
+      }
+    }
+  }
+}
+
+
+
+    
+    </script>
+
+    <style type="text/css">
+    .black{background-color: #000;width: 40px;height: 40px;border-radius: 40px;border: 1px solid;}
+    .white{background-color: #FFFFFF;width: 40px;height: 40px;border-radius: 40px;border: 1px solid black;}
+    </style>
+</head>
+<body>
+    <div style="margin: 0px auto; top: 20px; width: 800px; height: 500px; border: 1px solid black;"
+        id="box">
+        <div id="notice" style="width: 200px; height: 20px; margin: 0px auto; margin-top: 20px;">
+            black:<span id="bp"></span>&nbsp;&nbsp;&nbsp;&nbsp;white:<span id="wp"></span></div>
+        <table id="checkboard" style="margin: 0px auto; margin-top: 20px;" border="1">
+        </table>
+        <div id="tips" style="width: 400px; margin: 0px auto; margin-top: 20px; height: 30px;
+            padding: 0px 20px 0px 20px; text-align: center;">
+            black first
+        </div>
+    </div>
+</body>
+</html>-->
+
+
+
+
+<!DOCTYPE html>
+<head> 
+	<meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <style> 
+    /* 弹窗 (background) */ 
+    .modal { 
+      display: none; /* 默认隐藏 */ 
+      position: fixed; 
+      z-index: 1; 
+      padding-top: 100px; 
+      left: 0; 
+      top: 0; 
+      width: 100%; 
+      height: 100%; 
+      overflow: auto; 
+      background-color: rgb(0,0,0); 
+      background-color: rgba(0,0,0,0.4); 
+    } 
+  
+    /* 弹窗内容 */ 
+    .modal-content { 
+      position: relative; 
+      background-color: white; 
+      margin: auto; 
+      
+      padding: 0px; 
+      border: 1px solid #888; 
+      width: 35%; 
+      height: auto;
+      box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19); 
+      -webkit-animation-name: animatetop; 
+      -webkit-animation-duration: 0.4s; 
+      animation-name: animatetop; 
+      animation-duration: 0.4s 
+    } 
+  
+    /* 添加动画 */ 
+    @-webkit-keyframes animatetop { 
+      from {top:-300px; opacity:0} 
+      to {top:0; opacity:1} 
+    } 
+  
+    @keyframes animatetop { 
+      from {top:-300px; opacity:0} 
+      to {top:0; opacity:1} 
+    } 
+  
+    /* 关闭按钮 */ 
+    .close { 
+      color: white; 
+      float: right; 
+      font-size: 28px; 
+      font-weight: bold; 
+    } 
+  
+    .close:hover, 
+    .close:focus { 
+      color: #000; 
+      text-decoration: none; 
+      cursor: pointer; 
+    } 
+  
+    .modal-header { 
+      padding: 2px 16px; 
+      background-color: #5587A2; 
+      color: white; 
+    } 
+  
+    .modal-body {padding: 2px 16px;} 
+  
+    .modal-footer { 
+      padding: 2px 16px; 
+      background-color: #5587A2; 
+      text-align: right; 
+      color: white; 
+    } 
+  </style> 
+</head> 
+<body> 
+  <!-- 打开弹窗按钮 -->
+ <button id="myBtn">打开弹窗</button> 
+ <input type="button" value="点击" onclick="dos()" >
+  
+  <!-- 弹窗 -->
+  <div id="myModal" class="modal"> 
+  
+    <!-- 弹窗内容 -->
+    <div class="modal-content"> 
+      <div class="modal-header"> 
+        <span class="close">×</span> 
+        <h2>弹窗头部</h2> 
+      </div> 
+      <div class="modal-body"> 
+        <p>弹窗内容...</p> 
+        <p>弹窗内容...</p> 
+      </div> 
+      <div class="modal-footer"> 
+        <h3>弹窗底部</h3> 
+      </div> 
+    </div> 
+  
+  </div> 
+  <script> 
+    // 获取弹窗 
+    var modal = document.getElementById('myModal'); 
+  
+    // 打开弹窗的按钮对象 
+    var btn = document.getElementById("myBtn"); 
+  
+    // 获取 <span> 元素，用于关闭弹窗 that closes the modal 
+    var span = document.getElementsByClassName("close")[0]; 
+  
+    // 点击按钮打开弹窗 
+    btn.onclick = function() { 
+      modal.style.display = "block"; 
+    } 
+  
+    // 点击 <span> (x), 关闭弹窗 
+    span.onclick = function() { 
+      modal.style.display = "none"; 
+    } 
+  
+    // 在用户点击其他地方时，关闭弹窗 
+    window.onclick = function(event) { 
+      if (event.target == modal) { 
+        modal.style.display = "none"; 
+      } 
+    } 
+    function dos(){
+    	//alert("你好");
+    	window.showModalDialog('index.html', 'Hello Son!', 'dialogWidth:240px; dialogHeight:100px; scroll:0;status:0; resizable:0;');
+    }
+  </script> 
+</body> 
+</html>

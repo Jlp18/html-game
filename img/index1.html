@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html ;charset=UTF-8"/>
+		<title>欢迎光临我的主页</title>
+		<style type="text/css">
+		body {
+			margin-left: 0px;
+			margin-top: 0px;
+			margin-right: 0px;
+			margin-bottom: 0px;
+			background-color: #FDFFE0;
+		}
+		</style>
+		<link href="LogoText.css" rel="stylesheet" type="text/css" />
+		
+	</head>
+	<body>
+		<table width="100%" border="0" cellspacing="0" cellpadding="0"> 
+			<tr>
+				<td height="100" background="img/car.jpg"><strong class="LogoText">我的个人主页</strong></td>
+			</tr>
+		</table>
+		<table border="0" width="100%" background="img/car.jpg">
+			<tr><font color="#FFFF00">
+				<th>我的日记</th><th>我的收藏</th><th>我的相册</th><th>我的朋友</th><th>给我留言</th><th width="25%"></th>
+			</font>
+			</tr>
+		</table>
+		<h1>直接调用JavaScript程序</h1>      <!--h1、h2、h3字号变小-->
+		<h2>
+		<script language="JavaScript">
+			var str="欢迎来到JavaScript世界...";
+			document.write(str);
+		</script>
+		<h2>
+		<h1>事件调用JavaScript程序</h1>
+		<script language="JavaScript">
+			function sayDate()
+			{
+				var dt=new Date();
+				var strdate="您好。\n现在时间为:"+dt;
+				alert(strdate);
+			}
+		</script>
+		<h2 onclick="sayDate();"><u>单击这里查看当前时间</u></h2>
+	</body>
+</html>
